@@ -29,8 +29,6 @@ browser$navigate(url)
 
 src <- browser$getPageSource()
 
-
-substr(src, 1, 1000)
 browser$screenshot(display=TRUE)
 panielli <- browser$findElement(using = 'id', value="panielli")
 panielli$clearElement()
@@ -40,61 +38,119 @@ total_weight <- browser$findElement(using = 'id', value="peso")
 total_weight$clearElement()
 total_weight$sendKeysToElement(list("6000"))
 
-total_hours_max <- 24
-total_hours <- browser$findElement(using = 'id', value="liev")
-total_hours$clearElement()
-total_hours$sendKeysToElement(list(total_hours_max))
- 
+# total_hours_max <- 24
+# total_hours <- browser$findElement(using = 'id', value="liev")
+# total_hours$clearElement()
+# total_hours$sendKeysToElement(list(total_hours_max))
+
+## NOTES:
+# 1. Oils do not affect yeast quantities. They are counted as half flour and half water
+# 2. Flour does not affet yeast quantities
+# 3. Everything else affect yeast
+# 4. Salt affect yeast activity but I am not sure it has been implemented in the app.
+
+total_hours_rage <- 3:96
+total_hours_rage <- 3:5
 room_temp_range <- 15:35
-fridge_hours_range <- total_hours_max-1
+room_temp_range <- 15:18
+teglia_range <- c(0, 1)
+hidro_range <- (50:100)
+hidro_range <- 50:53
+fridge_range <- 0:(max(total_hours_rage)-1)
+salt_range <- 0:70
+salt_range <- 50:51
+
+grid <- expand.grid(total_hours_rage,room_temp_range,fridge_range, teglia_range,hidro_range,salt_range)
+names(grid)[1:6] <- c("Total Hours", "Room Temp", "Hours Fridge", "Teglia", "Hidro","Salt")
+grid <- grid[!grid$"Hours Fridge">grid$"Total Hours"-1, ]
+
+grid$yeast <- NA
 
 
-yest_temp <- c()
-fridge_h <- c()
-for (r in room_temp_range){
-  room_temp <- as.character(r)
-  print(room_temp)
-  room_t <- browser$findElement(using = 'id', value="gradi")
-  room_t$clearElement()
-  room_t$sendKeysToElement(list(r))
-  for (f in seq(fridge_hours_range)){
-    fridge_hours <- f
+
+done <- 0
+total_combinations <- nrow(grid)
+teglia_list <- c()
+hours_list <- c()
+fridge_list <- c()
+room_list <- c()
+hidro_list <- c()
+salt_list <- c()
+for (t in teglia_range){
+  teglia_name <- ifelse(t==0,"No", "Yes")
+  #print(teglia_name)
+  teglia_t <- browser$findElement(using = 'id', value="teglia")
+  teglia_t$clickElement()
+  for (tot in total_hours_rage){
+    hours_name <- as.character(tot)
+    #print(hours_name)
+    total_hours <- browser$findElement(using = 'id', value="liev")
+    total_hours$clearElement()
+    total_hours$sendKeysToElement(list(tot))
+  for (f in 0:(tot-1)){
+    fridge_name <- as.character(f)
+    #print(fridge_name)
     hours_fridge <- browser$findElement(using = 'id', value="frigo")
     hours_fridge$clearElement()
     hours_fridge$sendKeysToElement(list(f))
+  for (r in room_temp_range){
+    room_name <- as.character(r)
+    #print(room_name)
+    room_t <- browser$findElement(using = 'id', value="gradi")
+    room_t$clearElement()
+    room_t$sendKeysToElement(list(r))
+  for (s in salt_range){
+    salt_name <- as.character(s)
+    salt <-  browser$findElement(using = 'id', value="salepl")
+    salt$clearElement()
+    salt$sendKeysToElement(list(s))
+  for (h in hidro_range){
+    hidro_name <- as.character(h)
+    hidro_t <- browser$findElement(using = 'id', value="idro")
+    hidro_t$clearElement()
+    hidro_t$sendKeysToElement(list(h))
     yeast <- browser$findElement(using = 'id', value="lievito")
     yest_raw <- yeast$getElementText()[[1]]
     yest_comma <- gsub("[,-]", ".", yest_raw)
     print(yest_comma)
     yest_comma_final <- as.numeric(gsub("[^0-9.-]", "", yest_comma))
-    fridge_h[[fridge_hours]] <- yest_comma_final
-  }
-  yest_temp[[room_temp]] <- fridge_h
+    grid[grid$"Teglia"==t & grid$"Total Hours"==tot & grid$"Hours Fridge"==f & grid$"Room Temp"==r & grid$"Salt"==s & grid$"Hidro"==h ,"yeast"] <- yest_comma_final
+    done <- done+1
+    #tot_minus_1 <- total_combinations-1)
+    print(paste("Yeast for", "Teglia:", teglia_name, "Total h ferment:", hours_name, "Time in Fridge:", fridge_name, "Room Temp:", room_name, "Hydration:", hidro_name, "Salt:",salt_name, sep=" "))
+    print(paste("----% Complete:",done/total_combinations*100, "----"))
+  }}}}}}
 
-}
+#names(yest_temp) <- as.numeric(names(yest_temp))
 
-names(yest_temp) <- as.numeric(names(yest_temp))
+na.omit(grid)
+str(hours_list)
+#apply(expand.grid(data.frame(yest_temp)), 1L, relist, skeleton = rapply(yest_temp, head, n = 1L, how = "list")) 
 
-
-apply(expand.grid(data.frame(yest_temp)), 1L, relist, skeleton = rapply(yest_temp, head, n = 1L, how = "list")) 
-
-grid <- expand.grid(room_temp_range,seq(fridge_hours_range))
+grid <- expand.grid(total_hours_rage,room_temp_range,fridge_range, teglia_range,hidro_range,salt_range)
 grid$yeast <- NA
 
 for (g in 1:nrow(grid)){
-  room_temp_g <- grid[g,"Var1"]
-  firdge_temp_g <- grid[g,"Var2"]
-  grid[g, "yeast"] <- yest_temp[[as.character(room_temp_g)]][firdge_temp_g]
+  teglia_g <- grid[g,"Var1"]
+  teglia_g <-  ifelse(teglia_g==0,"No", "Yes")
+  room_temp_g <- grid[g,"Var2"]
+  firdge_hours_g <- grid[g,"Var3"]
+  grid[g, "yeast"] <- teglia[[teglia_g]][[as.character(room_temp_g)]][[firdge_hours_g]] 
 }
 
 
-names(grid)[1:2] <- c("room_temp", "fridge_hours")
+names(grid)[1:3] <- c("teglia","room_temp", "fridge_hours")
 
-temp_pol <- lm(log(yeast)~poly(room_temp,5,raw = TRUE)+poly(fridge_hours,8,raw = TRUE),grid)
-predition <- exp(predict(temp_pol,data.frame(room_temp = 24,fridge_hours=23)))
+temp_pol <- lm(log(yeast)~ as.factor(teglia) + poly(room_temp,5,raw = TRUE)+poly(fridge_hours,8,raw = TRUE),grid)
+summary(temp_pol)
+predition <- exp(predict(temp_pol,data.frame(teglia=0, room_temp = 15,fridge_hours=1)))
+
+
 
 ## ALL GOOD TO HERE 
 # implement temperature environmnet 
+
+
 temp_environment <- browser$findElement(using = 'id', value="gradi")
 temp_environment$clearElement()
 temp_environment$sendKeysToElement(list("15"))
