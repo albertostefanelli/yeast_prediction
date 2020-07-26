@@ -8,9 +8,10 @@ The second phase builds on the Calcola Pizza model and integrate the data from P
 
 # Task 
 
-1. Try first implementation with limited range 
-2. Calculate time (Might considere to use pbrelicate)
-3. Set up server 
+1. Try first implementation with limited range [Done, Working]
+2. Calculate time (Might considere to use pbrelicate) [Not sure it is worth it]
+3. Set up server [Done]
+	1. Implement on the server
 4. Run and get the model 
 
 

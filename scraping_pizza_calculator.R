@@ -66,8 +66,6 @@ grid <- grid[!grid$"Hours Fridge">grid$"Total Hours"-1, ]
 
 grid$yeast <- NA
 
-
-
 done <- 0
 total_combinations <- nrow(grid)
 teglia_list <- c()
@@ -121,74 +119,9 @@ for (t in teglia_range){
     print(paste("----% Complete:",done/total_combinations*100, "----"))
   }}}}}}
 
-#names(yest_temp) <- as.numeric(names(yest_temp))
-
-na.omit(grid)
-str(hours_list)
-#apply(expand.grid(data.frame(yest_temp)), 1L, relist, skeleton = rapply(yest_temp, head, n = 1L, how = "list")) 
-
-grid <- expand.grid(total_hours_rage,room_temp_range,fridge_range, teglia_range,hidro_range,salt_range)
-grid$yeast <- NA
-
-for (g in 1:nrow(grid)){
-  teglia_g <- grid[g,"Var1"]
-  teglia_g <-  ifelse(teglia_g==0,"No", "Yes")
-  room_temp_g <- grid[g,"Var2"]
-  firdge_hours_g <- grid[g,"Var3"]
-  grid[g, "yeast"] <- teglia[[teglia_g]][[as.character(room_temp_g)]][[firdge_hours_g]] 
-}
 
 
-names(grid)[1:3] <- c("teglia","room_temp", "fridge_hours")
-
-temp_pol <- lm(log(yeast)~ as.factor(teglia) + poly(room_temp,5,raw = TRUE)+poly(fridge_hours,8,raw = TRUE),grid)
-summary(temp_pol)
-predition <- exp(predict(temp_pol,data.frame(teglia=0, room_temp = 15,fridge_hours=1)))
-
-
-
-## ALL GOOD TO HERE 
-# implement temperature environmnet 
-
-
-temp_environment <- browser$findElement(using = 'id', value="gradi")
-temp_environment$clearElement()
-temp_environment$sendKeysToElement(list("15"))
-
-
-
-
-yest_fridge <- c()
-for (i in 0:23){
-temp <- as.character(i)
-total_hours <- browser$findElement(using = 'id', value="liev")
-total_hours$clearElement()
-total_hours$sendKeysToElement(list("24"))
-hours_fridge <- browser$findElement(using = 'id', value="frigo")
-hours_fridge$clearElement()
-hours_fridge$sendKeysToElement(list(i))
-yeast <- browser$findElement(using = 'id', value="lievito")
-yest_raw <- yeast$getElementText()[[1]]
-yest_comma <- gsub("[,-]", ".", yest_raw)
-print(yest_comma)
-yest_comma_final <- as.numeric(gsub("[^0-9.-]", "", yest_comma))
-yest_fridge[[temp]] <- yest_comma_final
-}
-
-library(ggplot2)
-
-df <- data.frame(cbind(x,y))
-
-y_temp <- array(yest_temp)
-x_temp <- as.numeric(names(yest_temp))
-
-temp_pol <- lm(log(y_temp)~poly(x_temp,5,raw = TRUE))
-predition_5_15_temp <- exp(predict(temp_pol,data.frame(x_temp = c(5:15))))
-names(predition_5_15_temp) <- c(5:15)
-15 degree  4.169995 for 23 hours 
-
-y_fridge <- array(yest_fridge)
-x_fridge <- as.numeric(names(yest_fridge))
+### MODELING
 
 hourse_fridge <- lm(log(y_fridge)~poly(x_fridge,7,raw = TRUE))
 summary(hourse_fridge)
